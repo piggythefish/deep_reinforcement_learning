@@ -6,79 +6,88 @@ from matplotlib.colors import ListedColormap
 import random
 import tqdm
 from matplotlib import animation
+from typing import List, Tuple, Union
+
+# ---------------------- Custom ColorMap ----------------------
 
 colors = [
     cm.get_cmap("Oranges_r", 2)(np.linspace(0, 1, 2)),
     cm.get_cmap("Blues", 3)(np.linspace(0.5, 1, 2)),
 ]
 colors = np.vstack(colors)
-newcmp = ListedColormap(colors, name="OrangeBlue")
+CustomColorMap = ListedColormap(colors, name="OrangeBlue")
 
 
-# firslty deterministic
-class Gridworld:
+# ---------------------- Gridworld Class ----------------------
+
+
+class DetrministicGridworld:
     def __init__(
         self,
-        n_cols=6,
-        n_rows=6,
-        walls=[],
-        traps=[],
-        start=(0, 0),
-        goal=None,
-        cost_per_step=0.1,
-        goal_reward=2,
-        trap_reward=-2,
+        n_cols: int = 6,
+        n_rows: int = 6,
+        walls: List[Tuple[int, int]] = [],
+        traps: List[Tuple[int, int]] = [],
+        goal: Union[Tuple[int, int], None] = None,
+        cost_per_step: float = 0.1,
+        goal_reward: float = 2,
+        trap_reward: float = -2,
     ) -> None:
+        """_summary_
+
+        Args:
+            n_cols (int, optional): Number of Columns. Defaults to 6.
+            n_rows (int, optional): Number of Rows. Defaults to 6.
+            walls (List[Tuple[int, int]]): Cordinates of Walls. Defaults to [].
+            traps (List[Tuple[int, int]]): Cordinates of Traps. They "kill" your agent. Defaults to [].
+            goal (Union[Tuple[int, int], None], optional): Cordinates of goal. Defaults to bottem right corner.
+            cost_per_step (float, optional): Cost per single step. Defaults to 0.1.
+            goal_reward (int, optional): Reward of goal. Defaults to 2.
+            trap_reward (int, optional): Reward of trap. Defaults to -2.
+        """
+
         # ----------------- Save Atributes -----------------
 
         self.dimensions = (n_cols, n_rows)
         self.walls = walls
-        self.start = start
 
+        # if none default to bottem right corner
         if goal is None:
             self.goal = (self.dimensions[0] - 1, self.dimensions[1] - 1)
         else:
             self.goal = goal
 
-        directions = ["left", "right", "up", "down"]
-        cords = [(-1, 0), (1, 0), (0, -1), (0, 1)]
-
-        self.directions = dict(zip(directions, cords))
-
         self.cost_per_step = cost_per_step
-
-        self.agent_pos = start
-        self.agent_reward = 0
         self.goal_reward = goal_reward
         self.traps = traps
         self.trap_costs = trap_reward
 
-        self.build_board()
-
-    def distance_to_goal(self, cords):
-        x, y = cords
-
-        return abs(self.goal[0] - x) + abs(self.goal[1] - y)
-
-    def direction_to_cord(self, direction, cord):
-        diff = self.directions[direction]
-
-        return cord[0] + diff[0], cord[1] + diff[1]
+        self._build_board()
 
     def sample_trajectory(self, start_state):
+        """Implement a trajectory"""
+
         reward = 0
 
         position = start_state
 
+        # while not dead or reached goal
+
         while position != self.goal and position not in self.traps:
             state_policy = self.policy[position]
+
+            # sample next postion
 
             next_postion = random.choices(
                 population=list(state_policy.keys()),
                 weights=list(state_policy.values()),
             )[0]
             position = self.direction_to_cord(next_postion, position)
+
+            # reward for step penalty
             reward -= self.cost_per_step
+
+        # apply final reward
 
         if position in self.traps:
             reward += self.trap_costs
@@ -88,12 +97,14 @@ class Gridworld:
 
         return reward
 
-    def step(
+    def episode(
         self,
     ):
         # draw random starting state
 
-        state = random.choice(self.all_normal_tiles)
+        state = random.choice(self.all_states)
+
+        # get reward of trajectory
 
         sampled_reward = self.sample_trajectory(state)
 
@@ -104,30 +115,43 @@ class Gridworld:
         self.state_values[state] = (aggregator + sampled_reward, counter + 1)
 
     def run(self, viz_at=[50, 200, 500, 1000, 10000]):
+
+        # agg for calculated values
+
         captured_values = {}
 
         for i in tqdm.tqdm(range(max(viz_at)), desc="Simulate"):
-            self.step()
+            self.episode()
 
+            # save values
             if i + 1 in viz_at:
                 captured_values[i + 1] = self.get_state_values().copy()
 
         for n, values in captured_values.items():
             self.visualize(f"After {n} Iterations", values)
 
-    def build_board(self):
-        # ----------------- Build Board -----------------
+    def _build_board(self):
+        """Builds the internal bord representation"""
 
+        # dict for directions
+        directions = ["left", "right", "up", "down"]
+        cords = [(-1, 0), (1, 0), (0, -1), (0, 1)]
+        self.directions = dict(zip(directions, cords))
+
+        # set of all reachable tiles
         self.all_valid_tiles = {
             cords for cords in np.ndindex(self.dimensions) if cords not in self.walls
         }
 
-        self.all_normal_tiles = list(
+        # set of all states
+        self.all_states = list(
             self.all_valid_tiles.difference([self.goal]).difference(self.traps)
         )
 
-        self.state_values = {cord: (0, 0) for cord in self.all_normal_tiles}
+        # aggregator for means
+        self.state_values = {cord: (0, 0) for cord in self.all_states}
 
+        # function to return all valid neighbor directions
         def get_neighbors(cords):
             return [
                 name
@@ -135,25 +159,30 @@ class Gridworld:
                 if self.direction_to_cord(name, cords) in self.all_valid_tiles
             ]
 
+        # dict of all valid neighbors
         self.neighbors = {
-            cords: get_neighbors(cords) for cords in self.all_normal_tiles
+            cords: get_neighbors(cords) for cords in self.all_states
         }
 
         # initiate policy
 
         self.policy = {}
 
-        for cords in self.all_normal_tiles:
+        for cords in self.all_states:
+            # get direction
             possible_directions = self.neighbors[cords]
 
+            # argmin of manhattan distance
             best_direction = min(
                 possible_directions,
-                key=lambda x: self.distance_to_goal(self.direction_to_cord(x, cords)),
+                key=lambda x: self.manhatten_distance_to_goal(
+                    self.direction_to_cord(x, cords)),
             )
 
+            # best directions get 80% prob
             state_policy = {best_direction: 0.8}
 
-            # distribute the rest
+            # the rest get 20% split up evenly
 
             for dir in possible_directions:
                 if dir == best_direction:
@@ -164,12 +193,27 @@ class Gridworld:
             self.policy[cords] = state_policy
 
     def get_state_values(self):
+        """Retunrs a Dictionary with every state and it's Markov Policy Value"""
+
         states = {}
 
         for cords, (sum, n) in self.state_values.items():
             states[cords] = sum / n if n > 0 else "NA"
 
         return states
+
+    def manhatten_distance_to_goal(self, cords):
+        """Small util"""
+        x, y = cords
+
+        return abs(self.goal[0] - x) + abs(self.goal[1] - y)
+
+    def direction_to_cord(self, direction, cord):
+        """Small util"""
+
+        diff = self.directions[direction]
+
+        return cord[0] + diff[0], cord[1] + diff[1]
 
     def plot_arrows(self):
         for cords, state_policies in self.policy.items():
@@ -219,9 +263,10 @@ class Gridworld:
 
         image[traps_y_cords, traps_x_cords] = 2
 
-        plt.figure(figsize=(self.dimensions[0] * 1.5, self.dimensions[1] * 1.5))
+        plt.figure(
+            figsize=(self.dimensions[0] * 1.5, self.dimensions[1] * 1.5))
 
-        plt.imshow(image, newcmp)
+        plt.imshow(image, CustomColorMap)
 
         for i in range(self.dimensions[0] - 1):
             plt.axvline(i + 0.5, color="black", linewidth=0.7)
@@ -255,10 +300,10 @@ class Gridworld:
         plt.title(title)
 
         legend_elements = [
-            Patch(facecolor=newcmp(0), label="Walls"),
-            Patch(facecolor=newcmp(1), label="Tiles"),
-            Patch(facecolor=newcmp(2), label="Trap"),
-            Patch(facecolor=newcmp(3), label="Goal"),
+            Patch(facecolor=CustomColorMap(0), label="Walls"),
+            Patch(facecolor=CustomColorMap(1), label="Tiles"),
+            Patch(facecolor=CustomColorMap(2), label="Trap"),
+            Patch(facecolor=CustomColorMap(3), label="Goal"),
         ]
 
         plt.legend(handles=legend_elements, bbox_to_anchor=(1.25, 1))
@@ -285,9 +330,10 @@ class Gridworld:
 
         image[traps_y_cords, traps_x_cords] = 2
 
-        fig = plt.figure(figsize=(self.dimensions[0] * 1.5, self.dimensions[1] * 1.5))
+        fig = plt.figure(
+            figsize=(self.dimensions[0] * 1.5, self.dimensions[1] * 1.5))
 
-        plt.imshow(image, newcmp)
+        plt.imshow(image, CustomColorMap)
 
         for i in range(self.dimensions[0] - 1):
             plt.axvline(i + 0.5, color="black", linewidth=0.7)
@@ -330,10 +376,10 @@ class Gridworld:
         )
 
         legend_elements = [
-            Patch(facecolor=newcmp(0), label="Walls"),
-            Patch(facecolor=newcmp(1), label="Tiles"),
-            Patch(facecolor=newcmp(2), label="Trap"),
-            Patch(facecolor=newcmp(3), label="Goal"),
+            Patch(facecolor=CustomColorMap(0), label="Walls"),
+            Patch(facecolor=CustomColorMap(1), label="Tiles"),
+            Patch(facecolor=CustomColorMap(2), label="Trap"),
+            Patch(facecolor=CustomColorMap(3), label="Goal"),
         ]
         plt.legend(handles=legend_elements, bbox_to_anchor=(1.25, 1))
 
