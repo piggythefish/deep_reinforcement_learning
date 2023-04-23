@@ -21,7 +21,7 @@ CustomColorMap = ListedColormap(colors, name="OrangeBlue")
 # ---------------------- Gridworld Class ----------------------
 
 
-class DetrministicGridworld:
+class DetrministicGridWorld:
     def __init__(
         self,
         n_cols: int = 6,
@@ -114,8 +114,7 @@ class DetrministicGridworld:
 
         self.state_values[state] = (aggregator + sampled_reward, counter + 1)
 
-    def run(self, viz_at=[50, 200, 500, 1000, 10000]):
-
+    def run(self, viz_at=[50, 200, 500, 1000, 10000], savefig = False):
         # agg for calculated values
 
         captured_values = {}
@@ -128,7 +127,7 @@ class DetrministicGridworld:
                 captured_values[i + 1] = self.get_state_values().copy()
 
         for n, values in captured_values.items():
-            self.visualize(f"After {n} Iterations", values)
+            self.visualize(f"After {n} Iterations", values, savefig = savefig)
 
     def _build_board(self):
         """Builds the internal bord representation"""
@@ -160,9 +159,8 @@ class DetrministicGridworld:
             ]
 
         # dict of all valid neighbors
-        self.neighbors = {
-            cords: get_neighbors(cords) for cords in self.all_states
-        }
+        self.neighbors = {cords: get_neighbors(
+            cords) for cords in self.all_states}
 
         # initiate policy
 
@@ -176,7 +174,8 @@ class DetrministicGridworld:
             best_direction = min(
                 possible_directions,
                 key=lambda x: self.manhatten_distance_to_goal(
-                    self.direction_to_cord(x, cords)),
+                    self.direction_to_cord(x, cords)
+                ),
             )
 
             # best directions get 80% prob
@@ -220,9 +219,16 @@ class DetrministicGridworld:
             x, y = cords
 
             for direction, prob in state_policies.items():
-                width_factor = 1 if prob == 0.8 else 0.37
 
-                buffer = 0.24 if prob == 0.8 else 0.3
+                if prob == 0.8:
+
+                    width_factor = 1
+                    buffer = 0.24
+
+                else:
+
+                    width_factor = 0.2 + prob/0.2 * 0.3
+                    buffer = 0.2 + 0.17 - 0.17 * width_factor
 
                 kwargs = {
                     "width": 0.022 * width_factor,
@@ -244,7 +250,7 @@ class DetrministicGridworld:
                 elif direction == "down":
                     plt.arrow(x, y + buffer, 0, 0.17 * width_factor, **kwargs)
 
-    def visualize(self, title="Initial Gridworld", values=None):
+    def visualize(self, title="Initial State of GridWorld", values=None, savefig=False):
         if values is None:
             values = self.get_state_values()
 
@@ -296,8 +302,10 @@ class DetrministicGridworld:
         )
 
         self.plot_arrows()
+        plt.xticks(fontsize=14,)
+        plt.yticks(fontsize=14,)
 
-        plt.title(title)
+        plt.title(title, fontsize=17)
 
         legend_elements = [
             Patch(facecolor=CustomColorMap(0), label="Walls"),
@@ -306,7 +314,13 @@ class DetrministicGridworld:
             Patch(facecolor=CustomColorMap(3), label="Goal"),
         ]
 
-        plt.legend(handles=legend_elements, bbox_to_anchor=(1.15, 1.01))
+        plt.legend(handles=legend_elements,
+                   bbox_to_anchor=(1.01, 1.01), fontsize=14)
+
+        if savefig:
+            plt.savefig(
+                "imgs/" + title.lower().replace(" ", "_") + ".jpg", dpi=400, bbox_inches="tight")
+
         plt.show()
 
     def animate_episode(
@@ -359,7 +373,7 @@ class DetrministicGridworld:
             self.goal_reward,
             ha="center",
             va="center",
-            size=14,
+            size=17,
         )
 
         ax = plt.gca()
@@ -370,9 +384,9 @@ class DetrministicGridworld:
             1.05,
             f"Current Reward: {0:.2f}",
             transform=ax.transAxes,
-            # ha="center",
+            ha="center",
             # va="center",
-            fontsize=12,
+            fontsize=17,
         )
 
         legend_elements = [
@@ -381,7 +395,10 @@ class DetrministicGridworld:
             Patch(facecolor=CustomColorMap(2), label="Trap"),
             Patch(facecolor=CustomColorMap(3), label="Goal"),
         ]
-        plt.legend(handles=legend_elements, bbox_to_anchor=(1.15, 1.01))
+        plt.legend(handles=legend_elements,
+                   bbox_to_anchor=(0.935, 1.16), fontsize=14)
+        plt.xticks(fontsize=14,)
+        plt.yticks(fontsize=14,)
 
         state = (0, 0)
 
