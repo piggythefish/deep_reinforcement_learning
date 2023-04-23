@@ -306,7 +306,7 @@ class DetrministicGridworld:
             Patch(facecolor=CustomColorMap(3), label="Goal"),
         ]
 
-        plt.legend(handles=legend_elements, bbox_to_anchor=(1.25, 1))
+        plt.legend(handles=legend_elements, bbox_to_anchor=(1.15, 1.01))
         plt.show()
 
     def animate_episode(
@@ -381,7 +381,7 @@ class DetrministicGridworld:
             Patch(facecolor=CustomColorMap(2), label="Trap"),
             Patch(facecolor=CustomColorMap(3), label="Goal"),
         ]
-        plt.legend(handles=legend_elements, bbox_to_anchor=(1.25, 1))
+        plt.legend(handles=legend_elements, bbox_to_anchor=(1.15, 1.01))
 
         state = (0, 0)
 
