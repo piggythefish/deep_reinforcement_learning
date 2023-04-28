@@ -15,6 +15,7 @@ Answer: The so called environment dynamics describe how our environment behaves 
 Example 1:
 In a Gridworld the state transition function describes in what way a certain tile can be reached. It could be either deterministic or probabilistic, so in the deterministic case it would always be clear that we end up in state s’ when executing action a in state s, or in the probabilistic case it could be possible that even if we choose action a in state s due to outer environmental influences we end up in a different s’ than we would have expected.
 The reward function explains how good a move in a direction or to which tile is. There could be a big reward for reaching a goal state, big cost for reaching a trap or a small costs for every move so that we motivate the agents to get to the goal as fast as possible.
+
 Example 2:
 In a self-driving car example the state transition function would describe how likely it is that we end up in the left lane for example if we turn left, but it would also have to take possible actions from the environment into account, so how other drivers behave or that traffic lights change signals.
 The reward function would give general rewards for not crashing, driving efficiently or reaching the goal on the fastest route.
