@@ -2,6 +2,37 @@
 
 ## Task 1
 
+
+1.1 Chess
+
+The set of states S consists of all legal board positions in chess and can be represented as a 8x8 matrix with different numbers for the different pieces. 
+
+The set of Actions A consist of all legal mooves defined by the chess rules. 
+
+The Policy is a mapping from states to actions and gives out a move for the given board state. It could take into account parameters like the value for each piece.
+
+
+1.2 LunarLander
+
+The set of States consists of 8-dimensional vectors that contain information:
+            s[0] is the horizontal coordinate
+            s[1] is the vertical coordinate
+            s[2] is the horizontal speed
+            s[3] is the vertical speed
+            s[4] is the angle
+            s[5] is the angular speed
+            s[6] 1 if first leg has contact, else 0
+            s[7] 1 if second leg has contact, else 0
+ 
+The set of Actions consists of four discrete actions.
+            Doing nothing
+            fire left orientation engine
+            fire main engine
+            fire right orientation engine
+            
+The policy is a mapping from the state space to the action space and gives out one of the four discrete actions.
+
+
 1.3 Model Based RL: Accessing Environment Dynamics
 
 Discuss the Policy Evaluation and Policy Iteration algorithms from the lecture. They explicitly make use of the environment dynamics (p(s′,r|s,a)).
