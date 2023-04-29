@@ -3,37 +3,54 @@
 ## Task 1
 
 
-1.1 Chess
+### 1.1 Chess
 
-The set of states S consists of all legal board positions in chess and can be represented as a 8x8 matrix with different numbers for the different pieces. 
+The set of states $S$ consists of all legal board positions in chess and can be represented as an 8x8 matrix with different numbers for the different pieces.
 
-The set of Actions A consist of all legal mooves defined by the chess rules. 
+The set of Actions $A$ consists of all legal moves defined by the chess rules.
 
-The Policy is a mapping from states to actions and gives out a move for the given board state. It could take into account parameters like the value for each piece.
+The probabilistic state dynamics $p(s'|s,a)$ are determined by the opponent. $s'$ is not the state of the board after we moved our piece. Instead, it's the state after our opponent's answer to our move. The probability distribution depends on the inner workings of our opponent. It could be a simple chess program.
 
+For the (probabilistic) reward dynamics $p(R_{t+1}|s,a)$, we could use many simple chess board evaluation functions like these examples. The $p$ is simply the Expected Value or the evaluation function weighted by the state dynamics probabilities.
 
-1.2 LunarLander
+The Policy is a mapping from states to actions and gives out a move for the given board state. A simple example would be using MiniMax with a board evaluation function for a certain depth.
+
+### 1.2 LunarLander
 
 The set of States consists of 8-dimensional vectors that contain information:
-            s[0] is the horizontal coordinate
-            s[1] is the vertical coordinate
-            s[2] is the horizontal speed
-            s[3] is the vertical speed
-            s[4] is the angle
-            s[5] is the angular speed
-            s[6] 1 if first leg has contact, else 0
-            s[7] 1 if second leg has contact, else 0
+- s[0] is the horizontal coordinate
+- s[1] is the vertical coordinate
+- s[2] is the horizontal speed
+- s[3] is the vertical speed
+- s[4] is the angle
+- s[5] is the angular speed
+- s[6] 1 if first leg has contact, else 0
+- s[7] 1 if second leg has contact, else 0
  
-The set of Actions consists of four discrete actions.
-            Doing nothing
-            fire left orientation engine
-            fire main engine
-            fire right orientation engine
+The set of Actions consists of four discrete actions:
+1. Doing nothing
+2. Fire left orientation engine
+3. Fire main engine
+4. Fire right orientation engine
             
-The policy is a mapping from the state space to the action space and gives out one of the four discrete actions.
+
+The state dynamics $p(s′|s,a)$ are the deterministic results of a simplified physical trajectory simulation, aslong as  ```enable_wind: bool = False```.
+
+The reward dynamics $p(R_{t+1}|s,a)$ of the next states are caclulated by factoring in these properties of $s'$:
+
+1. Movement direction relative to landing pad
+2. Comming to rest
+3. Crashes
+4. Legs on the ground
+5. Firing Engines
 
 
-1.3 Model Based RL: Accessing Environment Dynamics
+The policy is a mapping from the state space to the action space and gives out one of the four discrete actions. Coming up with a simple policy seems to be quite hard in this case.
+
+
+
+
+### 1.3 Model Based RL: Accessing Environment Dynamics
 
 Discuss the Policy Evaluation and Policy Iteration algorithms from the lecture. They explicitly make use of the environment dynamics (p(s′,r|s,a)).
 
@@ -48,12 +65,11 @@ In a Gridworld the state transition function describes in what way a certain til
 The reward function explains how good a move in a direction or to which tile is. There could be a big reward for reaching a goal state, big cost for reaching a trap or a small costs for every move so that we motivate the agents to get to the goal as fast as possible. 
 
 Example 2:
-In a self-driving car example the state transition function would describe how likely it is that we end up in the left lane for example if we turn left, but it would also have to take possible actions from the environment into account, so how other drivers behave or that traffic lights change signals.
-The reward function would give general rewards for not crashing, driving efficiently or reaching the goal on the fastest route.
+Another example for the environment dynamics could be in the domain of robotics. For instance, in a robotic arm manipulation task, the state transition function would describe how the position of the robotic arm changes when a certain action is taken, such as moving the arm to a certain angle or grasping an object. The reward function would give a positive reward for successfully grasping the object and placing it at a desired location, while a negative reward could be given for knocking over an object or dropping it. This example would fall into the deterministic category.
 
 • Discuss: Are the environment dynamics generally known and can practically be used to solve a problem with RL?
 
-Answer: The environment dynamics are not always known, for example in 2-player games, where we cannot know what our opponent is going to do or especially in real-world scenarios such as having a self-driving car, where we cannot know what other drivers are going to do or even that it suddenly starts to rain. To solve this problem practically we can try to give a good estimation of certain events that are out of our control and work with expected values.
+Answer: The environment dynamics are not always known, for example in 2-player games, where we cannot know what our opponent is going to do or especially in real-world scenarios such as having a self-driving car, where we cannot know what other drivers are going to do or even that it suddenly starts to rain. To solve this problem practically we could try to give a good estimation of certain events that are out of our control and work with expected values.
 
 
 ## Task 2
