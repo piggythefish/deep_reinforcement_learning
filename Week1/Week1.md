@@ -11,7 +11,7 @@ The set of Actions $A$ consists of all legal moves defined by the chess rules.
 
 The probabilistic state dynamics $p(s'|s,a)$ are determined by the opponent. $s'$ is not the state of the board after we moved our piece. Instead, it's the state after our opponent's answer to our move. The probability distribution depends on the inner workings of our opponent. It could be a simple chess program.
 
-For the (probabilistic) reward dynamics $p(R_{t+1}|s,a)$, we could use many simple chess board evaluation functions like these examples. The $p$ is simply the Expected Value or the evaluation function weighted by the state dynamics probabilities.
+For the (probabilistic) reward dynamics $p(R_{t+1}|s,a)$, we could use many simple chess board evaluation functions like [these](https://www.chessprogramming.org/Simplified_Evaluation_Function) examples. The $p$ is simply the Expected Value or the evaluation function weighted by the state dynamics probabilities.
 
 The Policy is a mapping from states to actions and gives out a move for the given board state. A simple example would be using MiniMax with a board evaluation function for a certain depth.
 
