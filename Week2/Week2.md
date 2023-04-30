@@ -1,36 +1,58 @@
-# Submition Week1
+# Submition Week2
 
 ## Task 2
 
 
-We decided to build a deterministic gridworld with walls and traps (which kill the agent). 
+We decided changed the our deterministic gridworld to an probabilistic. 
 
-Our Policy $\pi(a|s)$ is defined like this:
-1. The neighboring tile with the lowest Manhatten Distance is being chosen with a probability of 80%. We use argmin, so if there would be a tie, the first valid tile is being chosen.
-2. The remaining 20% are evenly distributed over all the other valid neighbor tiles.
+We use a deterministic Policy $\pi(a|s)$, which we initialize randomly at the start.
 
-We use a penalzier per step of $0.1$ .
-
-We interpretet one 'episode' like this:
-1. Sample uniformly one of the tiles as starting tile  .
-2. Calculate the reward of a trajectory starting starting from that tile. A trajectory stops if either a trap or the goal is bein reached.
-3. Save the final performance of the trajectory for the starting tile to later calcute the mean for each tile. 
+Our probabilistic state dynamics $p(R_{t+1}|s,a)$ are controlled by the new argument ```probality_wrong_step```, ```which dictates the probability of taking the agent misstepping into a different direction then intended. If an agent missteps, the new direction will be uniformally sampled.  
 
 
-Here are the results after 50, 200, 500, 1000 & 10000 episodes each: 
+For the (probabilistic) reward dynamics $p(R_{t+1}|s,a)$ we calculate the average returns of each state action pair.
+
+Our Hyperparameters were:
+
+- ```trap_reward =-1,```
+- ```goal_reward = 3,```
+- ```cost_per_step = 0.05,```
+- ```max_steps_per_episode =200```
+
+This is how an initial state of the bord looks like:
+
+
 
 <img src="imgs/initial_state_of_gridworld.jpg" alt="initial_state_of_gridworld"  width=50%>
 
-<img src="imgs/after_50_iterations.jpg" alt="after_50_iterations"  width=50%>
 
-<img src="imgs/after_200_iterations.jpg" alt="after_200_iterations"  width=50%>
+We did 10000 iterations of MC Policy Iteration for two differetn probality_wrong_steps [Failure or Missstep rates]. We used 5% and 10%, which resulted in quite interesting differences. 
 
-<img src="imgs/after_500_iterations.jpg" alt="after_500_iterations"  width=50%>
 
-<img src="imgs/after_1000_iterations.jpg" alt="after_1000_iterations"  width=50%>
+### The Policies After 10000 Steps 
 
-<img src="imgs/after_10000_iterations.jpg" alt="after_10000_iterations"  width=50%>
+<img src="imgs/after_10000_steps_-_5_failure_rate.jpg" alt="sadsa"  width=50%>
 
-An animation of one trajectory (a especially funny one):
+<img src="imgs/after_10000_steps_-_10_failure_rate.jpg" alt="sadsa"  width=50%>
 
-![animation](ani.gif)
+###  The average Return-per-Episodes
+
+<img src="imgs/0.05_failure_rate_over_time.jpg" alt="after_200_iterations"  width=50%>
+
+<img src="imgs/0.1_failure_rate_over_time.jpg" alt="after_200_iterations"  width=50%>
+
+### Number of samples for each Tile
+
+<img src="imgs/sample_counts_5.jpg" alt="after_500_iterations"  width=50%>
+<img src="imgs/sample_counts_10.jpg" alt="after_500_iterations"  width=50%>
+
+###  One Episode with 10% Failure Rate after 10000 Iterations
+
+![episode](videos/episode.gif)
+
+### State-Action Values over Time with 10% Failure Rate for different Steprates
+
+![one](videos/7000_Steps.gif)
+
+
+![ji](videos/20000_Steps.gif)

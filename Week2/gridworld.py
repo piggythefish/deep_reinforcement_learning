@@ -7,8 +7,11 @@ import random
 import tqdm
 from matplotlib import animation
 from typing import List, Tuple, Union
+from matplotlib.colors import LogNorm, Normalize
+import seaborn as sns
+from mpl_toolkits.axes_grid1.axes_divider import make_axes_locatable
 
-# ---------------------- Custom ColorMap ----------------------
+# ---------------------- Custom ColorMaps ----------------------
 
 colors = [
     cm.get_cmap("Oranges_r")(np.linspace(0, 1, 3)),
@@ -17,6 +20,13 @@ colors = [
 colors = np.vstack(colors)
 CustomColorMap = ListedColormap(colors, name="OrangeBlue")
 
+
+top = cm.get_cmap('Oranges_r', 128)
+bottom = cm.get_cmap('Blues', 128)
+
+newcolors = np.vstack((top(np.linspace(0, 1, 128)),
+                       bottom(np.linspace(0, 1, 128))))
+OranbeBlue = ListedColormap(newcolors[::-1], name='OrangeBlue')
 
 # ---------------------- Gridworld Class ----------------------
 
@@ -331,6 +341,16 @@ class ProbabilisticGridWorld:
                 plt.arrow(x, y + buffer, 0, 0.17, **kwargs)
 
     def visualize(self, title="Initial State of GridWorld", values=None, savefig=False):
+        self.base_viz(values)
+
+        plt.title(title, fontsize=17)
+        if savefig:
+            plt.savefig(
+                "imgs/" + title.lower().replace(" ", "_").replace("%","") + ".jpg", dpi=400, bbox_inches="tight")
+
+        plt.show()
+
+    def base_viz(self, values,  legend_small=False):
         if values is None:
             values = self.get_state_values()
 
@@ -350,7 +370,7 @@ class ProbabilisticGridWorld:
 
         image[traps_y_cords, traps_x_cords] = 3
 
-        plt.figure(
+        fig = plt.figure(
             figsize=(self.dimensions[0] * 1.5, self.dimensions[1] * 1.5))
 
         plt.imshow(image, CustomColorMap)
@@ -386,8 +406,6 @@ class ProbabilisticGridWorld:
         plt.xticks(fontsize=14,)
         plt.yticks(fontsize=14,)
 
-        plt.title(title, fontsize=17)
-
         legend_elements = [
             Patch(facecolor=CustomColorMap(0), label="Walls"),
             Patch(facecolor=CustomColorMap(1), label="Start"),
@@ -395,72 +413,23 @@ class ProbabilisticGridWorld:
             Patch(facecolor=CustomColorMap(3), label="Trap"),
             Patch(facecolor=CustomColorMap(4), label="Goal"),
         ]
+        if not legend_small:
+            plt.legend(handles=legend_elements,
+                       bbox_to_anchor=(1.01, 1.01), fontsize=14)
 
-        plt.legend(handles=legend_elements,
-                   bbox_to_anchor=(1.01, 1.01), fontsize=14)
+        else:
+            plt.legend(handles=legend_elements,
+                       bbox_to_anchor=(0.935, 1.16), fontsize=14)
 
-        if savefig:
-            plt.savefig(
-                "imgs/" + title.lower().replace(" ", "_") + ".jpg", dpi=400, bbox_inches="tight")
-
-        plt.show()
+        return fig, image,
 
     def animate_episode(
         self, title="Initial Gridworld", values=None, start_point=(0, 0), nbuffer=10
     ):
-        if values is None:
-            values = self.get_state_values()
 
-        image = np.ones(self.dimensions[::-1])
-
-        # image[self.start] = 2
-        image[self.goal] = 3
-
-        walls_x_cords = [x for x, y in self.walls]
-        walls_y_cords = [y for x, y in self.walls]
-
-        image[walls_y_cords, walls_x_cords] = 0
-
-        traps_x_cords = [x for x, y in self.traps]
-        traps_y_cords = [y for x, y in self.traps]
-
-        image[traps_y_cords, traps_x_cords] = 2
-
-        fig = plt.figure(
-            figsize=(self.dimensions[0] * 1.5, self.dimensions[1] * 1.5))
-
-        plt.imshow(image, CustomColorMap)
-
-        for i in range(self.dimensions[0] - 1):
-            plt.axvline(i + 0.5, color="black", linewidth=0.7)
-
-        for i in range(self.dimensions[1] - 1):
-            plt.axhline(i + 0.48, color="black", linewidth=0.7)
-
-        for (x, y), val in values.items():
-            if type(val) == str:
-                pass
-
-            else:
-                val = f"{val:.2f}"
-
-            plt.text(x, y, val, ha="center", va="center", size=14)
-
-        for x, y in self.traps:
-            plt.text(x, y, self.trap_costs, ha="center", va="center", size=14)
-
-        plt.text(
-            self.goal[0],
-            self.goal[1],
-            self.goal_reward,
-            ha="center",
-            va="center",
-            size=17,
-        )
+        fig, image = self.base_viz(values, legend_small= True)
 
         ax = plt.gca()
-
-        self.plot_arrows()
         ttl = plt.text(
             0.5,
             1.05,
@@ -471,47 +440,38 @@ class ProbabilisticGridWorld:
             fontsize=17,
         )
 
-        legend_elements = [
-            Patch(facecolor=CustomColorMap(0), label="Walls"),
-            Patch(facecolor=CustomColorMap(1), label="Tiles"),
-            Patch(facecolor=CustomColorMap(2), label="Trap"),
-            Patch(facecolor=CustomColorMap(3), label="Goal"),
-        ]
-        plt.legend(handles=legend_elements,
-                   bbox_to_anchor=(0.935, 1.16), fontsize=14)
-        plt.xticks(fontsize=14,)
-        plt.yticks(fontsize=14,)
+        (agent,) = plt.plot(*self.start, "-ro", markersize=25)
 
-        state = (0, 0)
+        while True:
 
-        (agent,) = plt.plot(state[0], state[1], "-ro", markersize=25)
+            history = self.create_episode(self.start)
 
-        reward = 0
+            text = f"History is {len(history)}. Still animate? - y/n/r\n"
 
-        position = start_point
+            t = input(text)
 
-        states = [position]
-        rewards = [0]
+            while t not in ["y", "n", "r"] and not t.isnumeric():
+                print(t)
+                t = input(text)
 
-        while position != self.goal and position not in self.traps:
-            state_policy = self.policy[position]
+            if "y" == t:
+                break
+            elif "n" == t:
+                exit()
+            elif t.isnumeric():
+                history[:int(t)]
+                break
 
-            next_postion = random.choices(
-                population=list(state_policy.keys()),
-                weights=list(state_policy.values()),
-            )[0]
-            position = self.direction_to_cord(next_postion, position)
-            reward -= self.cost_per_step
-            rewards.append(reward)
-            states.append(position)
+        states = [i[0] for i in history]
+        rewards = [i[1] for i in history]
 
-        if position in self.traps:
-            reward += self.trap_costs
+        state = states[-1]
+        action = self.policy[state]
 
-        else:
-            reward += self.goal_reward
+        reward, last_state,  = self.sample_from_environment(state, action)
 
-        rewards[-1] = reward
+        states.append(last_state)
+        rewards.append(reward)
 
         def update(i):
             complete = i % nbuffer == 0
@@ -535,8 +495,146 @@ class ProbabilisticGridWorld:
             agent.set_data(cords)
             return (agent, ttl)
 
-        steps = np.arange(1, (len(states) - 1) * nbuffer)
+        steps = np.arange(0, (len(states) - 1) * nbuffer)
 
         ani = animation.FuncAnimation(fig, update, steps)
+
+        return ani
+
+    def sample_counts(self, title="Number of Samples per Tile", savefig=False):
+
+        image = np.zeros(self.dimensions[::-1]) + 0.1
+
+        for (x, y), (_, n) in self.state_values.items():
+
+            image[y, x] = n
+
+        dtype = np.array(["10hallosa"]).dtype
+
+        labels = np.full(image.shape, "", dtype=dtype)
+
+        mask = image < 100
+
+        labels[mask] = image[mask].astype(dtype)
+
+        for y, x in np.ndindex(labels.shape):
+
+            val = labels[y, x]
+
+            if "." in val:
+                labels[y, x] = val.replace(".", "")
+
+            if (x, y) == self.start:
+                labels[y, x] = "Start"
+
+            if (x, y) in self.walls:
+                labels[y, x] = "Wall"
+
+            if (x, y) == self.goal:
+                labels[y, x] = "Goal"
+
+            if (x, y) in self.traps:
+                labels[y, x] = "Trap"
+
+        plt.figure(
+            figsize=(self.dimensions[0] * 1.5, self.dimensions[1] * 1.2))
+
+        sns.heatmap(image, annot=labels.copy(),
+                    cmap=OranbeBlue,  norm=LogNorm(), fmt="", cbar_kws={'label': 'N Samples'})
+
+        plt.title(title, fontsize=17)
+        if savefig:
+            plt.savefig(
+                savefig, dpi=400, bbox_inches="tight")
+
+        plt.show()
+
+    def animate_values(self, FREQ=20, N=7000):
+
+        vals = [self.get_state_values().copy()]
+        iterations = [0]
+
+        for i in tqdm.tqdm(range(N), desc="Doing Policy Iterations"):
+            self.step()
+
+            if i % FREQ == 0:
+
+                vals.append(self.get_state_values().copy())
+                iterations.append(i)
+
+        vmin = min(map(lambda x: min(x.values()), vals))
+        vmax = max(map(lambda x: max(x.values()), vals))
+
+        image = np.zeros(self.dimensions[::-1]) + vmin
+
+        frames = []
+
+        for state_values, step in zip(vals, iterations):
+
+            for (x, y), v in state_values.items():
+
+                image[y, x] = v
+
+            frames.append((image.copy(), step))
+
+        image = frames[0][0]
+
+        fig = plt.figure(
+            figsize=(self.dimensions[0] * 1.5, self.dimensions[1] * 1.2))
+
+        ax = plt.gca()
+
+        ax1_divider = make_axes_locatable(ax)
+        im = plt.imshow(image, OranbeBlue, vmin=vmin, vmax=vmax)
+
+        ttl = plt.text(
+            0.5,
+            1.05,
+            f"State Values for Step {0}",
+            transform=ax.transAxes,
+            ha="center",
+            # va="center",
+            fontsize=17,
+        )
+
+        for y, x in np.ndindex(image.shape):
+
+            text = None
+
+            if (x, y) == self.start:
+                text = "Start"
+
+            if (x, y) in self.walls:
+                text = "Wall"
+
+            if (x, y) == self.goal:
+                text = "Goal"
+
+            if (x, y) in self.traps:
+                text = "Trap"
+
+            if text is not None:
+                fontcolor = 'black' if image[y, x] > vmin else "white"
+
+                plt.text(x, y, text, ha="center", va="center",
+                         size=14, color=fontcolor)
+
+        cax1 = ax1_divider.append_axes("right", size="7%", pad="2%")
+        cb1 = plt.colorbar(im, cax=cax1)
+        cax1.set_title('State Values',fontsize=12)
+
+        def update(tup):
+
+            frame, i = tup
+
+            im.set_array(frame)
+
+            ttl.set_text(
+                f"State Values for Step {i:4d}"
+            )
+
+            return im, ttl
+
+        ani = animation.FuncAnimation(fig, update, frames)
 
         return ani
