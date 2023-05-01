@@ -43,7 +43,11 @@ On the other hand the 10% Failure Rate has generally lower rewards but better po
 
 ###  The average Return-per-Episodes
 
+For 5% Failure Rate:
+
 <img src="imgs/0.05_failure_rate_over_time.jpg" alt="after_200_iterations"  width=50%>
+
+And 10% Failure Rate:
 
 <img src="imgs/0.1_failure_rate_over_time.jpg" alt="after_200_iterations"  width=50%>
 
