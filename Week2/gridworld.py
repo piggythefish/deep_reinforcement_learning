@@ -83,7 +83,7 @@ class ProbabilisticGridWorld:
         self._build_board()
 
     def create_episode(self, start_state):
-        """Implement a trajectory"""
+        """Implement a episote"""
 
         position = start_state
 
@@ -93,12 +93,20 @@ class ProbabilisticGridWorld:
 
         n_steps = 0
 
+        # while goal/traps not reached and under max iterations
+
         while position != self.goal and position not in self.traps and n_steps < self.max_steps_per_episode:
+
+            # get policy
 
             best_direction = self.policy[position]
 
+            # sample environment
+
             imediate_reward, next_position = self.sample_from_environment(
                 position, best_direction)
+
+            # append state and imediate reward
 
             history.append((position, imediate_reward))
 
@@ -111,11 +119,11 @@ class ProbabilisticGridWorld:
     def step(
         self,
     ):
-        # draw random starting state
+        """One step of MK policy iteration"""
 
         state = self.start
 
-        # get reward of trajectory
+        # samlpe episode
 
         history = self.create_episode(state)
 
@@ -123,32 +131,45 @@ class ProbabilisticGridWorld:
 
         self.update_values(history)
 
+        # get average return per episode
+
         avg_return_per_episode = self.get_state_value(self.start)
 
         return avg_return_per_episode
 
     def update_values(self, history):
 
-        visisited = set()
+        # visisited = set()
+
+        # gamma sum
 
         gamma_weigted_return = 0
 
         while len(history):
 
+            # go from back to front
             position, imediate_reward = history.pop()
 
-            if position in visisited:
+            # if position in visisited:
 
-                continue
+            #     continue
 
             # visisited.add(position)
 
+            # new state value
+
             new_state_value = imediate_reward + self.gamma * gamma_weigted_return
+
+            # add to other samples
 
             self.aggregate_state_value(position, new_state_value)
 
+            # update gamma sums
+
             gamma_weigted_return = imediate_reward + \
                 self.gamma * gamma_weigted_return
+
+            # update policy by argmax of q function
 
             neighbors = self.neighbors[position]
 
@@ -158,14 +179,16 @@ class ProbabilisticGridWorld:
             self.policy[position] = greedy_policy
 
     def aggregate_state_value(self, state, new_val):
-
+        """Counts Samples for Means"""
         aggregator, counter = self.state_values[state]
         self.state_values[state] = (
             aggregator + new_val, counter + 1)
 
     def q_function(self, state, action):
+        """Implementaion of the q function"""
 
         imediate_reward = self.reward_dynamics[(state, action)]
+        # get possible states to end up in and their probabilities
         poss_states, probs = self.state_dynamics[(state, action)]
 
         return_value = imediate_reward
@@ -177,6 +200,7 @@ class ProbabilisticGridWorld:
                 V_next_state = self.get_state_value(next_state)
 
             else:
+                # if not we define a state value of trap of goal to be 0
                 V_next_state = 0
 
             return_value += self.gamma * V_next_state * prob
@@ -184,6 +208,8 @@ class ProbabilisticGridWorld:
         return return_value
 
     def sample_from_environment(self, state, action):
+        """Sample the environment gives state and ation pair
+        Returns new reward and next state"""
 
         reward = self.reward_dynamics[(state, action)]
         poss_states, probs = self.state_dynamics[(state, action)]
@@ -193,6 +219,7 @@ class ProbabilisticGridWorld:
 
         return reward, next_position
 
+    # returns state value of tile
     def get_state_value(self, state):
 
         sum, n = self.state_values[state]
@@ -245,14 +272,14 @@ class ProbabilisticGridWorld:
         self.neighbors = {cords: get_neighbors(
             cords) for cords in self.all_states}
 
-        # initiate policy
+        # initiate policy and enivronemtn dyna,os
 
         self.policy = {}
         self.reward_dynamics = {}
         self.state_dynamics = {}
 
         for cords in self.all_states:
-            # get direction
+            # get possible directions
             possible_directions = self.neighbors[cords]
 
             # random initialization
@@ -260,40 +287,46 @@ class ProbabilisticGridWorld:
 
             self.policy[cords] = direction
 
-            # create state and reward dynamics
-            avg_rewards_for_action = {}
-
+            # for every possible action
             for action in possible_directions:
 
+                # get reward
                 reward_of_action = self.compute_simple_reward(cords, action)
+
+                # initaate state and reward dynamics
 
                 prob_correct = (1 - self.probality_wrong_step)
                 resulting_state = self.direction_to_cord(action, cords)
 
+                # add next state and possiblity to reach it
                 state_dynamic = {resulting_state: prob_correct}
-
+                # weighted reward
                 avg = prob_correct * reward_of_action
 
+                # get the other possible actions
                 other_actions = set(possible_directions).difference((action,))
 
+                # their probabilities
                 prob_false = (self.probality_wrong_step / len(other_actions))
 
                 for other_action in other_actions:
                     reward_of_action = self.compute_simple_reward(
                         cords, other_action)
-
+                    # sum of the weighted values
                     avg += prob_false * reward_of_action
 
                     resulting_state = self.direction_to_cord(
                         other_action, cords)
+                    # save probs of reaching them
                     state_dynamic[resulting_state] = prob_false
 
+                # save env dynamics
                 self.state_dynamics[(cords, action)] = list(
                     state_dynamic.keys()), list(state_dynamic.values())
                 self.reward_dynamics[(cords, action)] = avg
 
     def compute_simple_reward(self, state, action):
-
+        """Small util"""
         reward = -self.cost_per_step
 
         next_position = self.direction_to_cord(action, state)
@@ -346,7 +379,7 @@ class ProbabilisticGridWorld:
         plt.title(title, fontsize=17)
         if savefig:
             plt.savefig(
-                "imgs/" + title.lower().replace(" ", "_").replace("%","") + ".jpg", dpi=400, bbox_inches="tight")
+                "imgs/" + title.lower().replace(" ", "_").replace("%", "") + ".jpg", dpi=400, bbox_inches="tight")
 
         plt.show()
 
@@ -427,7 +460,7 @@ class ProbabilisticGridWorld:
         self, title="Initial Gridworld", values=None, start_point=(0, 0), nbuffer=10
     ):
 
-        fig, image = self.base_viz(values, legend_small= True)
+        fig, image = self.base_viz(values, legend_small=True)
 
         ax = plt.gca()
         ttl = plt.text(
@@ -621,7 +654,7 @@ class ProbabilisticGridWorld:
 
         cax1 = ax1_divider.append_axes("right", size="7%", pad="2%")
         cb1 = plt.colorbar(im, cax=cax1)
-        cax1.set_title('State Values',fontsize=12)
+        cax1.set_title('State Values', fontsize=12)
 
         def update(tup):
 

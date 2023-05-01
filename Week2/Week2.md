@@ -18,6 +18,7 @@ Our Hyperparameters were:
 - ```goal_reward = 3,```
 - ```cost_per_step = 0.05,```
 - ```max_steps_per_episode =200```
+- $\gamma$ = 0.9
 
 This is how an initial state of the bord looks like:
 
@@ -33,7 +34,12 @@ We did 10000 iterations of MC Policy Iteration for two differetn probality_wrong
 
 <img src="imgs/after_10000_steps_-_5_failure_rate.jpg" alt="sadsa"  width=50%>
 
+
 <img src="imgs/after_10000_steps_-_10_failure_rate.jpg" alt="sadsa"  width=50%>
+
+What is interesting here is that the 5% Failure Rate leads to generally higher rewards further away and less good policys on the less visited corners.
+
+On the other hand the 10% Failure Rate has generally lower rewards but better policie decisions at the corners.
 
 ###  The average Return-per-Episodes
 
@@ -41,10 +47,16 @@ We did 10000 iterations of MC Policy Iteration for two differetn probality_wrong
 
 <img src="imgs/0.1_failure_rate_over_time.jpg" alt="after_200_iterations"  width=50%>
 
+Here again see that a lower Failure Rate leeds to higher returns.
+
 ### Number of samples for each Tile
 
 <img src="imgs/sample_counts_5.jpg" alt="after_500_iterations"  width=50%>
 <img src="imgs/sample_counts_10.jpg" alt="after_500_iterations"  width=50%>
+
+These images show how often each tile was visited. What we see is that for the 5% Failure Rate even after 10000 episodes some tiles were only visited 20 times, which explains the bad decision there.
+
+The 10% Failure Rate leeds to far of tiles being visited more and thus better policies at the corners.
 
 ###  One Episode with 10% Failure Rate after 10000 Iterations
 
