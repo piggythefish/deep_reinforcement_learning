@@ -7,7 +7,7 @@ We decided changed the our deterministic gridworld to an probabilistic.
 
 We use a deterministic Policy $\pi(a|s)$, which we initialize randomly at the start.
 
-Our probabilistic state dynamics $p(R_{t+1}|s,a)$ are controlled by the new argument ```probality_wrong_step```, ```which dictates the probability of taking the agent misstepping into a different direction then intended. If an agent missteps, the new direction will be uniformally sampled.  
+Our probabilistic state dynamics $p(R_{t+1}|s,a)$ are controlled by the new argument ```probality_wrong_step```, which dictates the probability of taking the agent misstepping into a different direction then intended. If an agent missteps, the new direction will be uniformally sampled.  
 
 
 For the (probabilistic) reward dynamics $p(R_{t+1}|s,a)$ we calculate the average returns of each state action pair.
