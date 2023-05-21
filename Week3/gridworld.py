@@ -362,6 +362,8 @@ class SarsaGridWorld(GridWorldBase):
 
                 self.q_values[(cords, action)] = 0.1
 
+        self.average_return_per_episode = MeanAgregator()
+
     def create_episode(self, start_state):
         """Implement a episote"""
 
@@ -420,6 +422,8 @@ class SarsaGridWorld(GridWorldBase):
         # update values
 
         episode_reward = self.update_values(history)
+
+        self.average_return_per_episode += episode_reward
 
         return episode_reward
 
@@ -669,6 +673,8 @@ class MarkovGridWorld(GridWorldBase):
 
                 self.q_values[(cords, action)] = MeanAgregator(0.1)
 
+        self.average_return_per_episode = MeanAgregator()
+
     def create_episode(self, start_state):
         """Implement a episote"""
 
@@ -734,9 +740,11 @@ class MarkovGridWorld(GridWorldBase):
 
         # get average return per episode
 
-        avg_return_per_episode = self.state_values[self.start]()
+        return_per_episode = self.state_values[self.start]()
 
-        return avg_return_per_episode
+        self.average_return_per_episode += return_per_episode
+
+        return return_per_episode
 
     def update_values(self, history):
 
@@ -773,6 +781,8 @@ class MarkovGridWorld(GridWorldBase):
                                 key=lambda x: self.q_values[(position, x)]())
 
             self.policy[position] = greedy_policy
+
+        return gamma_weigted_return
 
     def get_state_values(self):
         """Retunrs a Dictionary with every state and it's Markov Policy Value"""
