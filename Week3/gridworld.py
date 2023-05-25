@@ -444,15 +444,16 @@ class SarsaGridWorld(GridWorldBase):
 
             if index < history_length:
 
-                state_action_pair = from_states[index], actions_taken[index]
-                q_val = self.q_values[state_action_pair]
+                n_state_action_pair = from_states[index], actions_taken[index]
+                q_val = self.q_values[n_state_action_pair]
 
                 reward += (self.gamma ** self.n_steps_sarsa) * q_val
 
-            cur_sap = from_states[i], actions_taken[i]
+            current_state_action_pair = from_states[i], actions_taken[i]
 
-            self.q_values[cur_sap] += self.alpha * \
-                (reward - self.q_values[cur_sap])
+            reward -= self.q_values[current_state_action_pair]
+
+            self.q_values[current_state_action_pair] += self.alpha * reward
 
             position = from_states[i]
 
