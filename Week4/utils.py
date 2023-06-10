@@ -71,7 +71,7 @@ def sample_trajectory(dqn, state, epsilon=0.2):
     random_choices = tf.random.uniform(
         shape=[n_par], minval=0, maxval=4, dtype=tf.int64)
 
-    return tf.where(mask, max_actions, random_choices), max_actions
+    return tf.where(mask, max_actions, random_choices), predictions
 
 
 @tf.function
