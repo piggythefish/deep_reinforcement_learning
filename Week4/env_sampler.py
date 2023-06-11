@@ -70,7 +70,7 @@ class ENV_SAMPLER:
 
         return samples[:n_samples]
 
-    def measure_model_perforamnce(self, steps, gamma: float, target_q):
+    def measure_model_perforamnce(self, gamma: float, target_q):
 
         self.reset_env()
 
@@ -79,7 +79,12 @@ class ENV_SAMPLER:
         q_values = []
         target_q_values = []
 
-        for step in tqdm.tqdm(range(steps), desc = "Eval Model"):
+        allready_terminated = np.zeros(self.n_multi_envs, np.bool)
+
+        steps = 0
+
+        while True:
+
             oberservation_as_tensor = preprocess_obersvation(
                 self.current_state)
 
@@ -93,15 +98,24 @@ class ENV_SAMPLER:
 
             self.current_state = observation
 
-            rewards += (gamma ** steps) * reward * (1 - terminated)
+            rewards += (gamma ** steps) * reward * (1 - allready_terminated)
+
+            allready_terminated = np.logical_or(
+                allready_terminated, terminated)
 
             for t in terminated:
 
                 if t:
-                    terminated_at.append(step)
+                    terminated_at.append(steps)
 
             q_values.extend(q_vals.tolist())
             target_q_values.extend(target_vals.numpy().tolist())
+
+            steps += 1
+
+            if allready_terminated.all():
+
+                break
 
         average_q_val = np.mean(q_values)
         average_target_q_val = np.mean(target_q_values)
@@ -110,7 +124,6 @@ class ENV_SAMPLER:
         l2_diff = np.sqrt(np.square(l2_diff).mean())
 
         average_rewards = np.mean(rewards)
-        average_termination = np.mean(
-            terminated_at) if terminated_at else np.NAN
+        average_termination = np.mean(terminated_at)
 
         return average_rewards, average_termination, average_q_val, average_target_q_val, l2_diff
