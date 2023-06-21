@@ -1,5 +1,6 @@
 # DeepRL Group 1
 
+![Week4](Week4/breakout.gif)
 
 ![Week1](Week1/ani.gif)
 

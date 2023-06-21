@@ -3,6 +3,9 @@ __pycache__/
 *.py[cod]
 *$py.class
 
+Week4/breakout
+Week4/lander
+
 
 # C extensions
 *.so
